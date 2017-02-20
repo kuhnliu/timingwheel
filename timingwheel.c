@@ -3,7 +3,7 @@
 #include "timingwheel.h"
 
 #define LIST_FIRST(head) ((head)->lh_first)
-#define TIMEOUT_ONE_TICK(tick) ((tick) = ((tick) + 1) % (g_timing_wheel->slot_size))
+#define TIMEOUT_ONE_TICK(tick) ((tick) = (((tick) + 1) % (g_timing_wheel->slot_size)))
 
 LIST_HEAD(timerhead, wtimer);
 typedef struct timer_slot {
@@ -23,14 +23,14 @@ timeout_init(long slot_size)
 {
     int i = 0;
     timing_wheel_t *wheel = NULL;
-    int memsize = sizeof(timing_wheel_t) + slot_size * (sizeof(timer_slot_t));
+    size_t memsize = (size_t)(sizeof(timing_wheel_t) + (size_t)slot_size * (sizeof(timer_slot_t)));
 
     wheel = (timing_wheel_t *)malloc(memsize);
     if (wheel == NULL) {
         return  -1; 
     }
 
-    memset(wheel, memsize, 0);
+    memset(wheel, (int)memsize, 0);
     wheel->slot_size = slot_size;
 
     for (i = 0; i < slot_size; i++) {
@@ -55,8 +55,8 @@ start_timer(wtimer_t *timer, long msec)
     long slot = 0;
     timer_slot_t *head = NULL;
 
-    timer->cycle = msec % g_timing_wheel->slot_size;
-    slot = (msec + g_timing_wheel->tick) / g_timing_wheel->slot_size; 
+    timer->cycle = msec / g_timing_wheel->slot_size;
+    slot = (msec + g_timing_wheel->tick) % g_timing_wheel->slot_size; 
     head = &(g_timing_wheel->slots[slot]);
     LIST_INSERT_HEAD(&head->head, timer, entry);
 }
@@ -78,7 +78,7 @@ timeout_timer(void)
     next = LIST_FIRST(&head->head);
     while((timer = next) != NULL ) {
         next = LIST_NEXT(timer, entry);
-        if (--next->cycle == 0) {
+        if (timer->cycle-- == 0) {
             LIST_REMOVE(timer, entry);
             timer->func(timer->data);
         }

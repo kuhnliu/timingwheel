@@ -22,7 +22,7 @@ extern void init_timer(wtimer_t *timer, wtimer_cb func, void *data);
 extern void start_timer(wtimer_t *timer, long msec);
 extern void stop_timer(wtimer_t *timer);
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 }
 #endif
 
